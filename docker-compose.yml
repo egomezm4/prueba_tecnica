@@ -1,0 +1,88 @@
+#Archivo de Docker compose para contenedores 
+version: "3.8"
+services:
+#Servidor con imagen de php 8.1 para instalacion de magento; la ruta root debe revisarse en defualt.conf de nginx
+  web:
+    build: .
+    container_name: web_tiendas
+    restart: always
+    ports:
+      - "90:80"
+    volumes:
+      #- ./apps:/var/www/html
+      - ./apps:/usr/share/nginx/html
+    depends_on:
+      - db
+      - bus
+#imagen de phpmyadmin para administracion de Base de datos
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpd_tiendas
+    ports:
+      - "8191:80"
+    environment:
+      - PMA_USER=root
+      - PMA_PASSWORD=Popoyan88+
+      - PHP_UPLOAD_MAX_FILESIZE=1024MB
+    depends_on:
+      - db
+#imagen de Base de datos mysql configurada en Magento
+  db:
+    image: mysql:8.0
+    container_name: data_tiendas
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: Popoyan88+
+      #MYSQL_DATABASE: magento
+      MYSQL_USER: magento
+      MYSQL_PASSWORD: Popoyan90+
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+ #contendeor de Elasticsearch
+  bus:
+   container_name: magento_bus_tiendas
+   image: elasticsearch:7.17.9
+   environment:
+     - node.name=magentos1
+     - cluster.name=magentos1
+     - cluster.initial_master_nodes=magentos1
+     #- discovery.type=single-node
+    # - bootstrap.memory_lock=true
+     - "ES_JAVA_OPTS=-Xms1024m -Xmx1024m"
+    #ulimits:
+     # memlock:
+      #  soft: -1
+       # hard: -1
+  jenkins:
+      image: jenkins/jenkins:2.401
+      privileged: true
+      user: root
+      ports:
+       - 8080:8080
+       - 50000:50000
+      container_name: jenkins
+      volumes:
+        - ./jhome:/var/jenkins_home
+        - /var/run/docker.sock:/var/run/docker.sock
+
+  ubuntu:
+    image:  ubuntu:jammy-20231128
+    command: sleep infinity
+    container_name: ubuntu
+    ports:
+      - 8190:8080
+    volumes:
+      - ./archivos:/home
+  web_app:
+    image: vtiger-www 
+    container_name: web_app
+    restart: always
+    ports:
+      - "9090:80"
+    volumes:
+      - ./www:/var/www/html
+    depends_on:
+      - db
+
+
